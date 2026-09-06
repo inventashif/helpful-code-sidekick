@@ -10,6 +10,19 @@ LOG_DIR="/tmp/hackerai-keepalive"
 LOCK="/tmp/hackerai-keepalive.lock"
 mkdir -p "$LOG_DIR"
 
+# Always run everything as root: the app dir lives under /root and root-owned
+# processes are not torn down with a normal user session.
+if [ "$(id -u)" -ne 0 ]; then
+  if command -v sudo >/dev/null 2>&1; then
+    exec sudo -E -n bash "$0" "$@"
+  fi
+  echo "must run as root" >&2
+  exit 1
+fi
+RUNNER=""
+if command -v sudo >/dev/null 2>&1; then RUNNER="sudo -E -n"; fi
+
+
 exec 9>"$LOCK"
 if ! flock -n 9; then
   echo "keepalive already running"
