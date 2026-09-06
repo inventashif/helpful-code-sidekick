@@ -11,19 +11,27 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 // Boots (and keeps alive) the local HackerAI runtime whenever the dev server
 // starts, so a workspace restart brings the proxied app back automatically.
+// The watchdog lives inside a detached tmux session on a fixed socket
+// (/tmp/hackerai.sock) so it survives this process going away.
 const hackeraiKeepalive = () => ({
   name: "hackerai-keepalive",
   apply: "serve" as const,
   configureServer() {
     const script = "/dev-server/scripts/hackerai-keepalive.sh";
     if (!existsSync(script)) return;
-    const child = spawn("setsid", ["bash", script], {
-      detached: true,
-      stdio: "ignore",
-    });
+    const child = spawn(
+      "bash",
+      [
+        "-lc",
+        "tmux -S /tmp/hackerai.sock has-session -t hackerai 2>/dev/null || " +
+          `tmux -S /tmp/hackerai.sock new-session -d -s hackerai 'bash ${script}'`,
+      ],
+      { detached: true, stdio: "ignore" },
+    );
     child.unref();
   },
 });
+
 
 export default defineConfig({
   tanstackStart: {
