@@ -11,7 +11,7 @@ set -u
 
 SRC_DIR="${HACKERAI_SRC:-/mnt/documents/hackerai}"
 APP_DIR="${HACKERAI_DIR:-/root/hackerai}"
-PORT="${PORT:-8080}"
+PORT="${PORT:-3000}"
 LOG_DIR="/tmp/hackerai-keepalive"
 LOCK="/tmp/hackerai-keepalive.lock"
 mkdir -p "$LOG_DIR"
@@ -78,7 +78,7 @@ start_stack() {
     log "supervisor already running ($existing) — waiting"
   else
     [ -d "$APP_DIR/node_modules" ] || sync_runtime
-    hijack_port
+    :
     log "starting stack on port $PORT"
     ( cd "$APP_DIR" && PORT="$PORT" setsid nohup node scripts/hackerai.mjs >>"$LOG_DIR/stack.log" 2>&1 & )
   fi
@@ -115,7 +115,7 @@ start_app_tunnel() {
 
 # Continuous port guard: the workspace dev server is auto-respawned by its own
 # supervisor, so a one-shot kill loses the race. Keep evicting non-app holders.
-( while true; do hijack_port; sleep 2; done ) &
+# port guard disabled: the app runs on 3000 and the workspace proxies to it
 PORT_GUARD_PID=$!
 trap 'kill $PORT_GUARD_PID 2>/dev/null' EXIT
 
