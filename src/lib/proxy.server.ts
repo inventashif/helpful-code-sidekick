@@ -44,10 +44,11 @@ const HOP_BY_HOP = new Set([
 ]);
 
 export async function proxyRequest(request: Request): Promise<Response> {
-  const target = getTarget();
+  const target = (await localReachable()) ? LOCAL_TARGET : getTarget();
   const incoming = new URL(request.url);
   const targetUrl = new URL(target);
   const url = `${targetUrl.origin}${incoming.pathname}${incoming.search}`;
+
 
   const headers = new Headers();
   request.headers.forEach((value, key) => {
