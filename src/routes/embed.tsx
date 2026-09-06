@@ -1,6 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-const APP_URL = "https://sodium-prayer-morning-lamps.trycloudflare.com";
+// Same-origin path: the workspace proxies "/" straight to the local app on
+// 127.0.0.1:3000, so this never breaks when a public link changes.
+const APP_URL = "/";
+
 
 export const Route = createFileRoute("/embed")({
   head: () => ({
