@@ -1,5 +1,5 @@
 const DEFAULT_TARGET =
-  "https://divorce-drugs-ruth-aged.trycloudflare.com";
+  "https://clicking-mouth-minolta-michel.trycloudflare.com";
 
 const getTarget = () =>
   (process.env["APP_PROXY_TARGET"] || DEFAULT_TARGET).replace(/\/$/, "");
