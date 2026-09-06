@@ -1,4 +1,5 @@
-const DEFAULT_TARGET = "https://asn-blocks-reel-explore.trycloudflare.com";
+const DEFAULT_TARGET =
+  "https://considering-shanghai-appliance-appreciate.trycloudflare.com";
 
 const getTarget = () =>
   (process.env["APP_PROXY_TARGET"] || DEFAULT_TARGET).replace(/\/$/, "");
