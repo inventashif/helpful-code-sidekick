@@ -41,7 +41,20 @@ const HOP_BY_HOP = new Set([
   "host",
   "content-length",
   "content-encoding",
+  // Cloudflare-injected headers: forwarding them into another Cloudflare zone
+  // (the tunnel hostname) makes the edge reject the request with error 1003.
+  "cf-connecting-ip",
+  "cf-ipcountry",
+  "cf-ray",
+  "cf-visitor",
+  "cf-worker",
+  "cf-ew-via",
+  "cf-request-id",
+  "cdn-loop",
+  "x-forwarded-for",
+  "x-real-ip",
 ]);
+
 
 export async function proxyRequest(request: Request): Promise<Response> {
   const target = (await localReachable()) ? LOCAL_TARGET : getTarget();
