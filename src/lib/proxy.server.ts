@@ -34,8 +34,8 @@ export async function proxyRequest(request: Request): Promise<Response> {
   const method = request.method.toUpperCase();
   const hasBody = method !== "GET" && method !== "HEAD";
 
-  try {
-    const upstream = await fetch(url, {
+  const attempt = () =>
+    fetch(url, {
       method,
       headers,
       body: hasBody ? request.body : undefined,
@@ -43,6 +43,18 @@ export async function proxyRequest(request: Request): Promise<Response> {
       // @ts-expect-error Cloudflare/undici streaming request bodies
       duplex: hasBody ? "half" : undefined,
     });
+
+  try {
+    let upstream: Response;
+    try {
+      upstream = await attempt();
+    } catch (error) {
+      // One retry for transient upstream hiccups (restarts, tunnel reconnects).
+      if (hasBody) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      upstream = await attempt();
+    }
+
 
     const responseHeaders = new Headers();
     upstream.headers.forEach((value, key) => {
