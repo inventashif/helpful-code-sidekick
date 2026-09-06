@@ -1,5 +1,5 @@
 const DEFAULT_TARGET =
-  "https://considering-shanghai-appliance-appreciate.trycloudflare.com";
+  "https://hydrogen-completing-para-knows.trycloudflare.com";
 
 const getTarget = () =>
   (process.env["APP_PROXY_TARGET"] || DEFAULT_TARGET).replace(/\/$/, "");
