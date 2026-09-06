@@ -1,5 +1,5 @@
 const DEFAULT_TARGET =
-  "https://sodium-prayer-morning-lamps.trycloudflare.com";
+  "https://drinking-feeding-out-dish.trycloudflare.com";
 
 // Inside the workspace the app is reachable directly on localhost, which never
 // expires. Only fall back to the public tunnel when localhost is unreachable
