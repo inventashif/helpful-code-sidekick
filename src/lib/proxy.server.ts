@@ -1,5 +1,4 @@
-const DEFAULT_TARGET =
-  "https://measuring-accessing-distinguished-metallic.trycloudflare.com";
+const DEFAULT_TARGET = "https://asn-blocks-reel-explore.trycloudflare.com";
 
 const getTarget = () =>
   (process.env["APP_PROXY_TARGET"] || DEFAULT_TARGET).replace(/\/$/, "");

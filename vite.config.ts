@@ -12,4 +12,14 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    server: {
+      watch: {
+        // The proxied HackerAI app lives in ./hackerai; its build output churns
+        // constantly and must not trigger dev-server reloads.
+        ignored: ["**/hackerai/**"],
+      },
+    },
+  },
 });
+
