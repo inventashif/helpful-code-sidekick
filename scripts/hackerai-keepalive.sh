@@ -36,8 +36,10 @@ start_stack() {
   if [ -n "${existing// /}" ]; then
     log "supervisor already running ($existing) — waiting instead of starting another"
   else
-    log "starting stack"
-    ( cd "$APP_DIR" && nohup node scripts/hackerai.mjs >>"$LOG_DIR/stack.log" 2>&1 & )
+    log "starting stack as $(id -un)"
+    # setsid detaches the stack from this watchdog's session so nothing upstream
+    # can take it down with us.
+    ( cd "$APP_DIR" && setsid nohup $RUNNER node scripts/hackerai.mjs >>"$LOG_DIR/stack.log" 2>&1 & )
   fi
   for _ in $(seq 1 90); do
     app_up && { log "stack up"; return 0; }
@@ -47,8 +49,35 @@ start_stack() {
   return 1
 }
 
+# Public link for the app (port 3000). Kept alive here so the shared URL
+# survives a tunnel drop; the current URL is written to a file for reference.
+APP_TUNNEL_URL_FILE="/tmp/hackerai-app-tunnel.url"
+start_app_tunnel() {
+  local bin="$APP_DIR/bin/cloudflared"
+  [ -x "$bin" ] || { log "cloudflared missing at $bin"; return 1; }
+  log "starting app tunnel"
+  : >"$LOG_DIR/app-tunnel.log"
+  ( setsid nohup $RUNNER "$bin" tunnel --url http://127.0.0.1:3000 \
+      >>"$LOG_DIR/app-tunnel.log" 2>&1 & )
+  for _ in $(seq 1 30); do
+    sleep 3
+    local url
+    url="$(grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' "$LOG_DIR/app-tunnel.log" | head -1)"
+    if [ -n "$url" ]; then
+      echo "$url" >"$APP_TUNNEL_URL_FILE"
+      log "app tunnel up: $url"
+      return 0
+    fi
+  done
+  log "app tunnel did not report a URL"
+  return 1
+}
 
-log "watchdog started (app dir: $APP_DIR)"
+app_tunnel_up() {
+  pgrep -f "cloudflared tunnel --url http://127.0.0.1:3000" >/dev/null 2>&1
+}
+
+log "watchdog started (app dir: $APP_DIR, user: $(id -un))"
 fails=0
 while true; do
   if app_up; then
@@ -61,5 +90,7 @@ while true; do
       fails=0
     fi
   fi
+  app_tunnel_up || start_app_tunnel
   sleep 30
 done
+
