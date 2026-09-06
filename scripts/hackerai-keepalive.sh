@@ -5,7 +5,7 @@
 # - safe to run many times: a lock file keeps a single watchdog
 set -u
 
-APP_DIR="${HACKERAI_DIR:-/dev-server/hackerai}"
+APP_DIR="${HACKERAI_DIR:-/root/hackerai}"
 LOG_DIR="/tmp/hackerai-keepalive"
 LOCK="/tmp/hackerai-keepalive.lock"
 mkdir -p "$LOG_DIR"
