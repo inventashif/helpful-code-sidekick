@@ -19,7 +19,9 @@ fi
 log() { echo "[$(date -u +%FT%TZ)] $*" >>"$LOG_DIR/keepalive.log"; }
 
 app_up() {
-  curl -sf -m 8 -o /dev/null "http://127.0.0.1:3000/" 2>/dev/null
+  curl -sf -m 8 -o /dev/null "http://127.0.0.1:3000/" 2>/dev/null &&
+    curl -sf -m 8 "http://127.0.0.1:3000/api/sandbox/presence" 2>/dev/null |
+      grep -q '"connections":\[{'
 }
 
 supervisor_pids() {
