@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-const APP_URL = "https://clicking-mouth-minolta-michel.trycloudflare.com";
+const APP_URL = "https://sodium-prayer-morning-lamps.trycloudflare.com";
 
 export const Route = createFileRoute("/embed")({
   head: () => ({
