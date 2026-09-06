@@ -113,11 +113,7 @@ start_app_tunnel() {
   return 1
 }
 
-# Continuous port guard: the workspace dev server is auto-respawned by its own
-# supervisor, so a one-shot kill loses the race. Keep evicting non-app holders.
-# port guard disabled: the app runs on 3000 and the workspace proxies to it
-PORT_GUARD_PID=$!
-trap 'kill $PORT_GUARD_PID 2>/dev/null' EXIT
+# Port guard removed: the app runs on 3000 and the workspace preview owns 8080.
 
 log "watchdog started (src: $SRC_DIR, runtime: $APP_DIR, port: $PORT)"
 [ -d "$APP_DIR/node_modules" ] || sync_runtime
