@@ -54,7 +54,7 @@ function AuthPage() {
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
-        setMessage("Account created. You can sign in now.");
+        setMessage("Check your inbox for a confirmation link, then sign in.");
         setMode("signin");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
