@@ -1,8 +1,33 @@
 const DEFAULT_TARGET =
   "https://sodium-prayer-morning-lamps.trycloudflare.com";
 
+// Inside the workspace the app is reachable directly on localhost, which never
+// expires. Only fall back to the public tunnel when localhost is unreachable
+// (e.g. the deployed Worker).
+const LOCAL_TARGET = "http://127.0.0.1:3000";
+
+let localOk: boolean | undefined;
+let localCheckedAt = 0;
+
+async function localReachable(): Promise<boolean> {
+  const now = Date.now();
+  if (localOk !== undefined && now - localCheckedAt < 30_000) return localOk;
+  localCheckedAt = now;
+  try {
+    const res = await fetch(`${LOCAL_TARGET}/`, {
+      method: "HEAD",
+      signal: AbortSignal.timeout(1500),
+    });
+    localOk = res.status < 500;
+  } catch {
+    localOk = false;
+  }
+  return localOk;
+}
+
 const getTarget = () =>
   (process.env["APP_PROXY_TARGET"] || DEFAULT_TARGET).replace(/\/$/, "");
+
 
 const HOP_BY_HOP = new Set([
   "connection",
@@ -19,10 +44,11 @@ const HOP_BY_HOP = new Set([
 ]);
 
 export async function proxyRequest(request: Request): Promise<Response> {
-  const target = getTarget();
+  const target = (await localReachable()) ? LOCAL_TARGET : getTarget();
   const incoming = new URL(request.url);
   const targetUrl = new URL(target);
   const url = `${targetUrl.origin}${incoming.pathname}${incoming.search}`;
+
 
   const headers = new Headers();
   request.headers.forEach((value, key) => {
