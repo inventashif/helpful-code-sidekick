@@ -22,10 +22,21 @@ app_up() {
   curl -sf -m 8 -o /dev/null "http://127.0.0.1:3000/" 2>/dev/null
 }
 
+supervisor_pids() {
+  pgrep -f "node scripts/hackerai.mjs" 2>/dev/null
+}
+
 start_stack() {
   [ -d "$APP_DIR" ] || { log "missing $APP_DIR"; return 1; }
-  log "starting stack"
-  ( cd "$APP_DIR" && nohup node scripts/hackerai.mjs >>"$LOG_DIR/stack.log" 2>&1 & )
+  # Never run two supervisors: duplicates fight over ports and sandboxes.
+  local existing
+  existing="$(supervisor_pids | tr '\n' ' ')"
+  if [ -n "${existing// /}" ]; then
+    log "supervisor already running ($existing) — waiting instead of starting another"
+  else
+    log "starting stack"
+    ( cd "$APP_DIR" && nohup node scripts/hackerai.mjs >>"$LOG_DIR/stack.log" 2>&1 & )
+  fi
   for _ in $(seq 1 90); do
     app_up && { log "stack up"; return 0; }
     sleep 5
@@ -33,6 +44,7 @@ start_stack() {
   log "stack did not come up in time"
   return 1
 }
+
 
 log "watchdog started (app dir: $APP_DIR)"
 fails=0
