@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as EmbedRouteImport } from './routes/embed'
+import { Route as LocalRouteImport } from './routes/local'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 
 const IndexRoute = IndexRouteImport.update({
@@ -35,6 +36,11 @@ const EmbedRoute = EmbedRouteImport.update({
   path: '/embed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocalRoute = LocalRouteImport.update({
+  id: '/local',
+  path: '/local',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/$': typeof SplatRoute
   '/auth': typeof AuthRoute
   '/embed': typeof EmbedRoute
+  '/local': typeof LocalRoute
   '/api/chat': typeof ApiChatRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/auth': typeof AuthRoute
   '/embed': typeof EmbedRoute
+  '/local': typeof LocalRoute
   '/api/chat': typeof ApiChatRoute
 }
 export interface FileRoutesById {
@@ -61,14 +69,15 @@ export interface FileRoutesById {
   '/$': typeof SplatRoute
   '/auth': typeof AuthRoute
   '/embed': typeof EmbedRoute
+  '/local': typeof LocalRoute
   '/api/chat': typeof ApiChatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/$' | '/auth' | '/embed' | '/api/chat'
+  fullPaths: '/' | '/$' | '/auth' | '/embed' | '/local' | '/api/chat'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$' | '/auth' | '/embed' | '/api/chat'
-  id: '__root__' | '/' | '/$' | '/auth' | '/embed' | '/api/chat'
+  to: '/' | '/$' | '/auth' | '/embed' | '/local' | '/api/chat'
+  id: '__root__' | '/' | '/$' | '/auth' | '/embed' | '/local' | '/api/chat'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,6 +85,7 @@ export interface RootRouteChildren {
   SplatRoute: typeof SplatRoute
   AuthRoute: typeof AuthRoute
   EmbedRoute: typeof EmbedRoute
+  LocalRoute: typeof LocalRoute
   ApiChatRoute: typeof ApiChatRoute
 }
 
@@ -109,6 +119,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmbedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/local': {
+      id: '/local'
+      path: '/local'
+      fullPath: '/local'
+      preLoaderRoute: typeof LocalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/chat': {
       id: '/api/chat'
       path: '/api/chat'
@@ -124,6 +141,7 @@ const rootRouteChildren: RootRouteChildren = {
   SplatRoute: SplatRoute,
   AuthRoute: AuthRoute,
   EmbedRoute: EmbedRoute,
+  LocalRoute: LocalRoute,
   ApiChatRoute: ApiChatRoute,
 }
 export const routeTree = rootRouteImport
