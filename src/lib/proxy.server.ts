@@ -65,7 +65,9 @@ export async function proxyRequest(request: Request): Promise<Response> {
 
   const headers = new Headers();
   request.headers.forEach((value, key) => {
-    if (!HOP_BY_HOP.has(key.toLowerCase())) headers.set(key, value);
+    const k = key.toLowerCase();
+    if (HOP_BY_HOP.has(k) || k.startsWith("cf-")) return;
+    headers.set(key, value);
   });
   headers.set("host", targetUrl.host);
   headers.set("x-forwarded-host", incoming.host);
