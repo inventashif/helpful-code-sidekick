@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// Same-origin path: the workspace proxies "/" straight to the local app on
+// Same-origin path: "/local" proxies straight to the workspace runtime on
 // 127.0.0.1:3000, so this never breaks when a public link changes.
-const APP_URL = "/";
+const APP_URL = "/local";
+
 
 
 export const Route = createFileRoute("/embed")({
