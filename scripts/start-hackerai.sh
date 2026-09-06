@@ -12,7 +12,7 @@ set -u
 SRC="/dev-server/scripts/hackerai"
 PERSISTENT="/mnt/documents/hackerai"
 APP="/root/hackerai"
-PORT="${PORT:-8080}"
+PORT="${PORT:-3000}"
 LOG="/tmp/hackerai-start.log"
 export PORT
 
