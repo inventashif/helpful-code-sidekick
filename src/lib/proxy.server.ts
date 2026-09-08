@@ -2,7 +2,7 @@
 // Cloudflare Quick Tunnels (*.trycloudflare.com) cannot be fetched from the
 // Worker — Cloudflare's edge answers 1003 — so this must be a non-Cloudflare
 // tunnel (localtunnel).
-const DEFAULT_TARGET = "https://inventashif-hackerai.loca.lt";
+const DEFAULT_TARGET = "https://optimum-rio-institutes-maps.trycloudflare.com";
 
 // Inside the workspace the app is reachable directly on localhost, which never
 // expires. Only fall back to the public tunnel when localhost is unreachable
