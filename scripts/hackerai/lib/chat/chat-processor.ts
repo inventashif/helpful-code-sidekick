@@ -18,7 +18,7 @@ import {
   resolveTierToProviderKey,
   type ModelName,
 } from "@/lib/ai/providers";
-import { isKiroModel, isZenModel } from "@/types/chat";
+import { isKiroModel, isOllamaModel, isZenModel } from "@/types/chat";
 import {
   ABORTED_TOOL_ERROR_TEXT,
   getIncompleteToolErrorText,

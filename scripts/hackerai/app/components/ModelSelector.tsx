@@ -57,7 +57,7 @@ import {
   getDefaultModelForMode,
   type ModelOption,
 } from "./ModelSelector/constants";
-import { isKiroModel, isZenModel } from "@/types/chat";
+import { isKiroModel, isOllamaModel, isZenModel } from "@/types/chat";
 
 // ── Kiro models (fetched from the local Kiro Gateway via /api/kiro/status) ──
 function useKiroModels(open: boolean, enabled: boolean) {
@@ -105,6 +105,49 @@ function useKiroModels(open: boolean, enabled: boolean) {
   // mean calling setState synchronously inside the effect, which triggers a
   // cascading re-render (react-hooks/set-state-in-effect).
   const loading = open && enabled && models === null;
+
+  return { models, loading };
+}
+
+// ── Ollama models (fetched from the local daemon via /api/ollama/status) ──
+function useOllamaModels(open: boolean) {
+  const [models, setModels] = useState<ModelOption[] | null>(null);
+
+  useEffect(() => {
+    if (!open || models !== null) return;
+    let cancelled = false;
+    fetch("/api/ollama/status")
+      .then((r) =>
+        r.ok ? r.json() : Promise.reject(new Error(String(r.status))),
+      )
+      .then(
+        (json: {
+          available?: boolean;
+          models?: { id: string; modelId: string; name: string }[];
+        }) => {
+          if (cancelled) return;
+          const list =
+            json.available && Array.isArray(json.models) ? json.models : [];
+          setModels(
+            list.map((m) => ({
+              id: m.id as SelectedModel,
+              // The section header already says Ollama, so drop the suffix.
+              label: m.name.replace(/\s*\(Ollama\)$/, ""),
+              description: "Runs locally on this machine",
+              poweredBy: m.modelId,
+            })),
+          );
+        },
+      )
+      .catch(() => {
+        if (!cancelled) setModels([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, models]);
+
+  const loading = open && models === null;
 
   return { models, loading };
 }
@@ -393,6 +436,8 @@ const ModelOptionList = ({
   zenModelsLoading,
   kiroModels,
   kiroModelsLoading,
+  ollamaModels,
+  ollamaModelsLoading,
 }: {
   options: ModelOption[];
   value: SelectedModel;
@@ -409,6 +454,8 @@ const ModelOptionList = ({
   zenModelsLoading?: boolean;
   kiroModels?: ModelOption[] | null;
   kiroModelsLoading?: boolean;
+  ollamaModels?: ModelOption[] | null;
+  ollamaModelsLoading?: boolean;
 }) => (
   <div className="flex flex-col gap-px">
     {isFreeUser ? (
@@ -608,6 +655,39 @@ const ModelOptionList = ({
         </div>
       </>
     ) : null}
+
+    {/* Ollama models — installed on the machine running HackerAI */}
+    {ollamaModels && ollamaModels.length > 0 ? (
+      <>
+        <div className="my-1 border-b border-border/50" />
+        <div className="px-2 pt-1 pb-0.5">
+          <span className="text-[11px] font-semibold tracking-widest text-muted-foreground/70">
+            OLLAMA — LOCAL
+          </span>
+        </div>
+        {ollamaModels.map((option) => (
+          <div key={option.id}>
+            <ModelOptionButton
+              option={option}
+              isSelected={value === option.id}
+              // Local models are free to run, so no subscription lock.
+              isLocked={false}
+              isPending={false}
+              subscription={subscription}
+              onSelect={onSelect}
+              mobile={mobile}
+            />
+          </div>
+        ))}
+      </>
+    ) : ollamaModelsLoading ? (
+      <>
+        <div className="my-1 border-b border-border/50" />
+        <div className="flex items-center gap-2 px-2.5 py-2 text-xs text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin" /> Loading local models…
+        </div>
+      </>
+    ) : null}
   </div>
 );
 
@@ -644,7 +724,12 @@ export function ModelSelector({ value, onChange, mode }: ModelSelectorProps) {
   // Zen free and Kiro models are direct selections — treat them as non-auto
   const isZenSelected = isZenModel(displayValue);
   const isKiroSelected = isKiroModel(displayValue);
-  const isAuto = displayValue === "auto" && !isZenSelected && !isKiroSelected;
+  const isOllamaSelected = isOllamaModel(displayValue);
+  const isAuto =
+    displayValue === "auto" &&
+    !isZenSelected &&
+    !isKiroSelected &&
+    !isOllamaSelected;
 
   const options = isAgentMode(mode) ? AGENT_MODEL_OPTIONS : ASK_MODEL_OPTIONS;
 
@@ -656,16 +741,24 @@ export function ModelSelector({ value, onChange, mode }: ModelSelectorProps) {
     open,
     !isFreeUser,
   );
+  // Local models run on this machine at no cost, so they are offered to
+  // every tier, free included.
+  const { models: ollamaModels, loading: ollamaModelsLoading } =
+    useOllamaModels(open);
 
   const effectiveValue = isAuto ? getDefaultModelForMode(mode) : displayValue;
   // Resolve selected label from tier options, or the zen / kiro lists
   const selectedFromTier = options.find((opt) => opt.id === effectiveValue);
   const selectedFromZen = zenModels?.find((opt) => opt.id === effectiveValue);
   const selectedFromKiro = kiroModels?.find((opt) => opt.id === effectiveValue);
+  const selectedFromOllama = ollamaModels?.find(
+    (opt) => opt.id === effectiveValue,
+  );
   const selected =
     selectedFromTier ??
     selectedFromZen ??
     selectedFromKiro ??
+    selectedFromOllama ??
     (isZenSelected
       ? {
           id: effectiveValue,
@@ -688,7 +781,15 @@ export function ModelSelector({ value, onChange, mode }: ModelSelectorProps) {
               .join(" "),
             poweredBy: effectiveValue.replace(/^kiro-/, ""),
           }
-        : options[0]);
+        : isOllamaSelected
+          ? {
+              id: effectiveValue,
+              label: effectiveValue
+                .replace(/^ollama-/, "")
+                .replace(/:latest$/, ""),
+              poweredBy: effectiveValue.replace(/^ollama-/, ""),
+            }
+          : options[0]);
 
   const isFreeAgent = isFreeUser && isAgentMode(mode);
   const triggerLabel = isFreeAgent
@@ -822,7 +923,11 @@ export function ModelSelector({ value, onChange, mode }: ModelSelectorProps) {
               mobile
               zenModels={zenModels}
               zenModelsLoading={zenModelsLoading}
-              kiroModels={kiroModels}
+              ollamaModels={ollamaModels}
+              ollamaModelsLoading={ollamaModelsLoading}
+              ollamaModels={ollamaModels}
+            ollamaModelsLoading={ollamaModelsLoading}
+            kiroModels={kiroModels}
               kiroModelsLoading={kiroModelsLoading}
             />
           </SheetContent>
