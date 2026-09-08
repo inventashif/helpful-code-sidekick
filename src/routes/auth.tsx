@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { syncConsoleSession } from "@/lib/console-session";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,8 +38,10 @@ function AuthPage() {
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/" });
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session) return;
+      await syncConsoleSession(data.session.access_token);
+      window.location.assign("/");
     });
   }, [navigate]);
 
@@ -57,9 +60,10 @@ function AuthPage() {
         setMessage("Check your inbox for a confirmation link, then sign in.");
         setMode("signin");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate({ to: "/" });
+        if (data.session) await syncConsoleSession(data.session.access_token);
+        window.location.assign("/");
       }
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Something went wrong.");
@@ -80,7 +84,9 @@ function AuthPage() {
       return;
     }
     if (result.redirected) return;
-    navigate({ to: "/" });
+    const { data } = await supabase.auth.getSession();
+    if (data.session) await syncConsoleSession(data.session.access_token);
+    window.location.assign("/");
   }
 
   return (
