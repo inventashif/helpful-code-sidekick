@@ -38,6 +38,57 @@ export type Database = {
         }
         Relationships: []
       }
+      console_preferences: {
+        Row: {
+          mode: string | null
+          model: string | null
+          settings: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          mode?: string | null
+          model?: string | null
+          settings?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          mode?: string | null
+          model?: string | null
+          settings?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      console_sessions: {
+        Row: {
+          created_at: string
+          external_id: string | null
+          id: string
+          last_active_at: string
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          last_active_at?: string
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          last_active_at?: string
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           chat_id: string
@@ -69,6 +120,47 @@ export type Database = {
             columns: ["chat_id"]
             isOneToOne: false
             referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      model_runs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          id: string
+          mode: string | null
+          model: string | null
+          session_id: string | null
+          status: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          mode?: string | null
+          model?: string | null
+          session_id?: string | null
+          status?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          mode?: string | null
+          model?: string | null
+          session_id?: string | null
+          status?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_runs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "console_sessions"
             referencedColumns: ["id"]
           },
         ]
