@@ -37,7 +37,6 @@ function ConsolePage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageRow[]>([]);
   const [draft, setDraft] = useState("");
-  const [streaming, setStreaming] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -84,7 +83,7 @@ function ConsolePage() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streaming]);
+  }, [messages, busy]);
 
   async function newChat() {
     const { data: session } = await supabase.auth.getSession();
@@ -168,36 +167,20 @@ function ConsolePage() {
         }),
       });
 
-      if (!res.ok || !res.body) {
+      if (!res.ok) {
         setError(
           res.status === 429
             ? "Too many requests right now — try again in a moment."
             : "The assistant could not answer. Please try again.",
         );
-        setBusy(false);
         return;
       }
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let acc = "";
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        acc += decoder.decode(value, { stream: true });
-        setStreaming(acc);
-      }
-      setStreaming("");
-      if (acc.trim()) {
-        setMessages((prev) => [
-          ...prev,
-          { id: `local-${Date.now()}`, role: "assistant", content: acc },
-        ]);
-      }
+      const data = (await res.json()) as { message?: MessageRow };
+      if (data.message) setMessages((prev) => [...prev, data.message as MessageRow]);
     } catch {
       setError("Connection interrupted. Please try again.");
     } finally {
-      setStreaming("");
       setBusy(false);
     }
   }
@@ -272,7 +255,7 @@ function ConsolePage() {
         </header>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-4 py-6">
-          {messages.length === 0 && !streaming ? (
+          {messages.length === 0 && !busy ? (
             <div className="mx-auto max-w-lg py-16 text-center">
               <h2 className="text-lg font-semibold">Start a security research chat</h2>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -292,11 +275,11 @@ function ConsolePage() {
             </div>
           ))}
 
-          {streaming ? (
+          {busy ? (
             <div className="mx-auto max-w-3xl">
               <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">HackerAI</p>
               <div className="whitespace-pre-wrap rounded-md border border-border bg-card px-3 py-2 text-sm">
-                {streaming}
+                Thinking…
               </div>
             </div>
           ) : null}
