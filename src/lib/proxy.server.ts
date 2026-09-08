@@ -1,5 +1,5 @@
 const DEFAULT_TARGET =
-  "https://drinking-feeding-out-dish.trycloudflare.com";
+  "https://optimum-rio-institutes-maps.trycloudflare.com";
 
 // Inside the workspace the app is reachable directly on localhost, which never
 // expires. Only fall back to the public tunnel when localhost is unreachable
