@@ -50,13 +50,24 @@ function AuthPage() {
     setMessage(null);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
-        setMessage("Check your inbox for a confirmation link, then sign in.");
+        if (data.session) {
+          await syncConsoleSession(data.session.access_token);
+          window.location.assign("/");
+          return;
+        }
+        const signIn = await supabase.auth.signInWithPassword({ email, password });
+        if (signIn.data.session) {
+          await syncConsoleSession(signIn.data.session.access_token);
+          window.location.assign("/");
+          return;
+        }
+        setMessage("Account created. Check your inbox to confirm, then sign in.");
         setMode("signin");
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -70,6 +81,7 @@ function AuthPage() {
       setBusy(false);
     }
   }
+
 
   async function google() {
     setBusy(true);
