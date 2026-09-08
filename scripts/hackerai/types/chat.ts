@@ -97,6 +97,22 @@ export function isKiroModel(value: string | null): boolean {
   );
 }
 
+/**
+ * Prefix for locally running Ollama models (see `lib/ai/providers/ollama.ts`).
+ * Duplicated here so this module stays client-bundle safe, matching the
+ * `KIRO_MODEL_PREFIX` approach above.
+ */
+export const OLLAMA_MODEL_PREFIX = "ollama-";
+
+/** Prefix check: the local daemon's catalog is dynamic. */
+export function isOllamaModel(value: string | null): boolean {
+  return (
+    typeof value === "string" &&
+    value.startsWith(OLLAMA_MODEL_PREFIX) &&
+    value.length > OLLAMA_MODEL_PREFIX.length
+  );
+}
+
 export type ReasoningTier = "quick" | "thorough" | "deep";
 
 export const REASONING_TIERS: readonly ReasoningTier[] = ["quick", "thorough", "deep"] as const;
@@ -166,7 +182,7 @@ export function coerceSelectedModel(
   if ((SELECTABLE_MODELS as readonly string[]).includes(value)) {
     return value as SelectedModel;
   }
-  if (isZenModel(value) || isKiroModel(value)) {
+  if (isZenModel(value) || isKiroModel(value) || isOllamaModel(value)) {
     return value as SelectedModel;
   }
   // Use Object.hasOwn (not the `in` operator) to avoid matching inherited
@@ -183,7 +199,8 @@ export function isSelectedModel(value: string | null): value is SelectedModel {
     value !== null &&
     ((SELECTABLE_MODELS as readonly string[]).includes(value) ||
       isZenModel(value) ||
-      isKiroModel(value))
+      isKiroModel(value) ||
+      isOllamaModel(value))
   );
 }
 

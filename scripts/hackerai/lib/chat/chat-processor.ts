@@ -18,7 +18,7 @@ import {
   resolveTierToProviderKey,
   type ModelName,
 } from "@/lib/ai/providers";
-import { isKiroModel, isZenModel } from "@/types/chat";
+import { isKiroModel, isOllamaModel, isZenModel } from "@/types/chat";
 import {
   ABORTED_TOOL_ERROR_TEXT,
   getIncompleteToolErrorText,
@@ -89,6 +89,11 @@ export function selectModel(
 
   // Direct Zen / Kiro model selection bypasses tier logic.
   if (allowedSelectedModel && isZenModel(allowedSelectedModel)) {
+    return allowedSelectedModel as unknown as ModelName;
+  }
+  if (allowedSelectedModel && isOllamaModel(allowedSelectedModel)) {
+    // Local models cost nothing and run on this machine, so every tier may
+    // pick them directly.
     return allowedSelectedModel as unknown as ModelName;
   }
   if (allowedSelectedModel && isKiroModel(allowedSelectedModel)) {

@@ -13,6 +13,11 @@ import {
   KIRO_MODEL_KEYS,
   KIRO_MODELS,
 } from "./providers/kiro-models";
+import {
+  createOllamaProvider,
+  getOllamaModelName,
+  isOllamaModelKey,
+} from "./providers/ollama";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -362,6 +367,8 @@ const kiroProviders = Object.fromEntries(
   Object.keys(KIRO_MODELS).map((k) => [k, kiroFactory(k)]),
 ) as Record<string, any>;
 
+const ollamaFactory = createOllamaProvider();
+
 const baseProviders = {
   ...buildProviderMap(createLanguageModelFactory()),
   ...buildZenFreeProviders(createLanguageModelFactory()),
@@ -447,6 +454,8 @@ export const getModelDisplayName = (modelName: ModelName): string => {
   if (modelDisplayNames[modelName]) return modelDisplayNames[modelName];
   // Gateway-only Kiro models absent from the static catalog get a derived label.
   if (isKiroModelKey(modelName)) return getKiroModelName(modelName);
+  // Locally installed Ollama models are discovered at runtime.
+  if (isOllamaModelKey(modelName)) return getOllamaModelName(modelName);
   if (
     isKnownZenFreeModelId(modelName) &&
     (KNOWN_ZEN_FREE_MODELS as readonly string[]).includes(modelName)
@@ -468,6 +477,7 @@ export const getModelCutoffDate = (
   if ((KNOWN_ZEN_FREE_MODELS as readonly string[]).includes(modelName))
     return "August 2026";
   if (isKiroModelKey(modelName)) return KIRO_DEFAULT_CUTOFF;
+  if (isOllamaModelKey(modelName)) return undefined;
   return modelCutoffDates[modelName];
 };
 
@@ -562,6 +572,10 @@ export function resolveTierToProviderKey(
   if (typeof tier === "string" && isKiroModelKey(tier)) {
     return tier as ModelName;
   }
+  // Local Ollama models are direct selections too.
+  if (typeof tier === "string" && isOllamaModelKey(tier)) {
+    return tier as ModelName;
+  }
   switch (tier) {
     case "hackerai-standard":
       return "model-deepseek-v4-flash-0731";
@@ -595,6 +609,10 @@ export const myProvider = {
     // Kiro models the gateway exposes but the static catalog doesn't list yet.
     if (isKiroModelKey(modelId)) {
       return kiroFactory(modelId);
+    }
+    // Local Ollama models, resolved from the daemon's catalog at runtime.
+    if (isOllamaModelKey(modelId)) {
+      return ollamaFactory(modelId);
     }
     // Fallback to base provider (will throw if not found, preserving original behavior)
     return (baseMyProvider as any).languageModel(modelId);
