@@ -1,10 +1,10 @@
 import { userClient } from "./console-gate.server";
 
 type Captured = {
-  externalId?: string | null;
-  title?: string | null;
-  model?: string | null;
-  mode?: string | null;
+  externalId: string | null;
+  title: string | null;
+  model: string | null;
+  mode: string | null;
 };
 
 function pickString(value: unknown): string | null {
@@ -28,7 +28,7 @@ export function captureFromBody(raw: string): Captured {
       mode: pickString(body["mode"]) ?? pickString(body["chatMode"]),
     };
   } catch {
-    return {};
+    return { externalId: null, title: null, model: null, mode: null };
   }
 }
 
