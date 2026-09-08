@@ -90,8 +90,8 @@ export async function proxyRequest(request: Request): Promise<Response> {
   const method = request.method.toUpperCase();
   const hasBody = method !== "GET" && method !== "HEAD";
 
-  const attempt = () =>
-    fetch(url, {
+  const attempt = (base: string) =>
+    fetch(`${new URL(base).origin}${incoming.pathname}${incoming.search}`, {
       method,
       headers,
       body: hasBody ? request.body : undefined,
@@ -100,16 +100,36 @@ export async function proxyRequest(request: Request): Promise<Response> {
       duplex: hasBody ? "half" : undefined,
     });
 
+  // A dead or rate-limited tunnel answers with an edge error, not app content.
+  const looksLikeEdgeError = (res: Response) =>
+    res.status === 429 ||
+    res.status === 502 ||
+    res.status === 503 ||
+    res.status === 530 ||
+    (res.status === 403 && !res.headers.get("content-type")?.includes("html"));
+
   try {
     let upstream: Response;
     try {
-      upstream = await attempt();
+      upstream = await attempt(url);
     } catch (error) {
       // One retry for transient upstream hiccups (restarts, tunnel reconnects).
       if (hasBody) throw error;
       await new Promise((resolve) => setTimeout(resolve, 400));
-      upstream = await attempt();
+      upstream = await attempt(url);
     }
+
+    // Bodyless requests can safely be replayed against the backup tunnel.
+    if (!hasBody && target !== LOCAL_TARGET && looksLikeEdgeError(upstream)) {
+      try {
+        const alt = await attempt(BACKUP_TARGET);
+        if (!looksLikeEdgeError(alt)) upstream = alt;
+      } catch {
+        /* keep the original response */
+      }
+    }
+
+
 
 
     const responseHeaders = new Headers();
