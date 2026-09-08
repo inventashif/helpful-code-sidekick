@@ -1,5 +1,8 @@
-const DEFAULT_TARGET =
-  "https://optimum-rio-institutes-maps.trycloudflare.com";
+// Public fallback used when localhost is unreachable (deployed Worker).
+// Cloudflare Quick Tunnels (*.trycloudflare.com) cannot be fetched from the
+// Worker — Cloudflare's edge answers 1003 — so this must be a non-Cloudflare
+// tunnel (localtunnel).
+const DEFAULT_TARGET = "https://dry-peaches-sink.loca.lt";
 
 // Inside the workspace the app is reachable directly on localhost, which never
 // expires. Only fall back to the public tunnel when localhost is unreachable
@@ -72,6 +75,9 @@ export async function proxyRequest(request: Request): Promise<Response> {
   headers.set("host", targetUrl.host);
   headers.set("x-forwarded-host", incoming.host);
   headers.set("x-forwarded-proto", incoming.protocol.replace(":", ""));
+  // localtunnel shows an interstitial page to unknown browsers unless this
+  // header is present.
+  headers.set("bypass-tunnel-reminder", "1");
 
   const method = request.method.toUpperCase();
   const hasBody = method !== "GET" && method !== "HEAD";
