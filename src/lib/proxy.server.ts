@@ -72,7 +72,9 @@ export async function proxyRequest(request: Request): Promise<Response> {
     if (HOP_BY_HOP.has(k) || k.startsWith("cf-")) return;
     headers.set(key, value);
   });
-  headers.set("host", targetUrl.host);
+  // Never forward/override Host: the fetch URL decides it. Setting it manually
+  // makes Cloudflare-fronted tunnel hosts answer 1003.
+  headers.delete("host");
   headers.set("x-forwarded-host", incoming.host);
   headers.set("x-forwarded-proto", incoming.protocol.replace(":", ""));
   // localtunnel shows an interstitial page to unknown browsers unless this
