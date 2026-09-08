@@ -91,6 +91,11 @@ export function selectModel(
   if (allowedSelectedModel && isZenModel(allowedSelectedModel)) {
     return allowedSelectedModel as unknown as ModelName;
   }
+  if (allowedSelectedModel && isOllamaModel(allowedSelectedModel)) {
+    // Local models cost nothing and run on this machine, so every tier may
+    // pick them directly.
+    return allowedSelectedModel as unknown as ModelName;
+  }
   if (allowedSelectedModel && isKiroModel(allowedSelectedModel)) {
     if (subscription === "free") return autoModel;
     return allowedSelectedModel as unknown as ModelName;
