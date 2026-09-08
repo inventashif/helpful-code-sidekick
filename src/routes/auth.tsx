@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
@@ -30,7 +30,6 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,7 +42,7 @@ function AuthPage() {
       await syncConsoleSession(data.session.access_token);
       window.location.assign("/");
     });
-  }, [navigate]);
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
