@@ -53,9 +53,12 @@ export function userClient(token: string) {
 
 export function gateCookieHeader(token: string): string {
   const maxAge = 60 * 60 * 12;
-  return `${GATE_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
+  // SameSite=None so the cookie also works when the console runs inside the
+  // Lovable editor preview iframe (a third-party context).
+  return `${GATE_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${maxAge}`;
 }
 
 export function clearGateCookieHeader(): string {
-  return `${GATE_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+  return `${GATE_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0`;
 }
+
