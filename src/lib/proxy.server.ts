@@ -116,12 +116,59 @@ export async function proxyRequest(request: Request): Promise<Response> {
   }
 }
 
+/**
+ * Console requests require a signed-in account. The console itself is a proxied
+ * app, so the session travels in an HttpOnly cookie set right after sign-in.
+ */
+async function gatedProxy(request: Request): Promise<Response> {
+  const { consoleUserId, gateToken } = await import("./console-gate.server");
+  const userId = await consoleUserId(request);
+
+  if (!userId) {
+    const wantsHtml = (request.headers.get("accept") ?? "").includes("text/html");
+    if (wantsHtml) {
+      return new Response(null, { status: 302, headers: { location: "/auth" } });
+    }
+    return new Response("Sign in required", { status: 401 });
+  }
+
+  const url = new URL(request.url);
+  const isChat = request.method === "POST" && /\/api\/chat(\/|$)/.test(url.pathname);
+
+  if (!isChat) return proxyRequest(request);
+
+  let rawBody = "";
+  let forwarded = request;
+  try {
+    rawBody = await request.clone().text();
+  } catch {
+    forwarded = request;
+  }
+
+  const startedAt = Date.now();
+  const response = await proxyRequest(forwarded);
+
+  const token = gateToken(request);
+  if (token && rawBody) {
+    const { captureFromBody, recordRun } = await import("./console-activity.server");
+    void recordRun(
+      token,
+      userId,
+      captureFromBody(rawBody),
+      response.status,
+      Date.now() - startedAt,
+    );
+  }
+
+  return response;
+}
+
 export const proxyHandlers = {
-  GET: ({ request }: { request: Request }) => proxyRequest(request),
-  POST: ({ request }: { request: Request }) => proxyRequest(request),
-  PUT: ({ request }: { request: Request }) => proxyRequest(request),
-  PATCH: ({ request }: { request: Request }) => proxyRequest(request),
-  DELETE: ({ request }: { request: Request }) => proxyRequest(request),
+  GET: ({ request }: { request: Request }) => gatedProxy(request),
+  POST: ({ request }: { request: Request }) => gatedProxy(request),
+  PUT: ({ request }: { request: Request }) => gatedProxy(request),
+  PATCH: ({ request }: { request: Request }) => gatedProxy(request),
+  DELETE: ({ request }: { request: Request }) => gatedProxy(request),
   OPTIONS: ({ request }: { request: Request }) => proxyRequest(request),
-  HEAD: ({ request }: { request: Request }) => proxyRequest(request),
+  HEAD: ({ request }: { request: Request }) => gatedProxy(request),
 };
