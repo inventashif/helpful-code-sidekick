@@ -12,10 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as EmbedRouteImport } from './routes/embed'
-import { Route as LocalRouteImport } from './routes/local'
-import { Route as ApiChatRouteImport } from './routes/api/chat'
-import { Route as ApiZenModelsRouteImport } from './routes/api/zen/models'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -32,81 +28,35 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EmbedRoute = EmbedRouteImport.update({
-  id: '/embed',
-  path: '/embed',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LocalRoute = LocalRouteImport.update({
-  id: '/local',
-  path: '/local',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiChatRoute = ApiChatRouteImport.update({
-  id: '/api/chat',
-  path: '/api/chat',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiZenModelsRoute = ApiZenModelsRouteImport.update({
-  id: '/api/zen/models',
-  path: '/api/zen/models',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/auth': typeof AuthRoute
-  '/embed': typeof EmbedRoute
-  '/local': typeof LocalRoute
-  '/api/chat': typeof ApiChatRoute
-  '/api/zen/models': typeof ApiZenModelsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/auth': typeof AuthRoute
-  '/embed': typeof EmbedRoute
-  '/local': typeof LocalRoute
-  '/api/chat': typeof ApiChatRoute
-  '/api/zen/models': typeof ApiZenModelsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/auth': typeof AuthRoute
-  '/embed': typeof EmbedRoute
-  '/local': typeof LocalRoute
-  '/api/chat': typeof ApiChatRoute
-  '/api/zen/models': typeof ApiZenModelsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    '/' | '/$' | '/auth' | '/embed' | '/local' | '/api/chat' | '/api/zen/models'
+  fullPaths: '/' | '/$' | '/auth'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    '/' | '/$' | '/auth' | '/embed' | '/local' | '/api/chat' | '/api/zen/models'
-  id:
-    | '__root__'
-    | '/'
-    | '/$'
-    | '/auth'
-    | '/embed'
-    | '/local'
-    | '/api/chat'
-    | '/api/zen/models'
+  to: '/' | '/$' | '/auth'
+  id: '__root__' | '/' | '/$' | '/auth'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
   AuthRoute: typeof AuthRoute
-  EmbedRoute: typeof EmbedRoute
-  LocalRoute: typeof LocalRoute
-  ApiChatRoute: typeof ApiChatRoute
-  ApiZenModelsRoute: typeof ApiZenModelsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -132,34 +82,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/embed': {
-      id: '/embed'
-      path: '/embed'
-      fullPath: '/embed'
-      preLoaderRoute: typeof EmbedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/local': {
-      id: '/local'
-      path: '/local'
-      fullPath: '/local'
-      preLoaderRoute: typeof LocalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/chat': {
-      id: '/api/chat'
-      path: '/api/chat'
-      fullPath: '/api/chat'
-      preLoaderRoute: typeof ApiChatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/zen/models': {
-      id: '/api/zen/models'
-      path: '/api/zen/models'
-      fullPath: '/api/zen/models'
-      preLoaderRoute: typeof ApiZenModelsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -167,10 +89,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
   AuthRoute: AuthRoute,
-  EmbedRoute: EmbedRoute,
-  LocalRoute: LocalRoute,
-  ApiChatRoute: ApiChatRoute,
-  ApiZenModelsRoute: ApiZenModelsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
