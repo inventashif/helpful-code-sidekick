@@ -1,5 +1,9 @@
-const DEFAULT_TARGET =
-  "https://optimum-rio-institutes-maps.trycloudflare.com";
+// Public fallback used when localhost is unreachable (the deployed Worker).
+// Must never point at a raw IP: Cloudflare answers "error code: 1003" for those.
+const DEFAULT_TARGET = "https://optimum-rio-institutes-maps.trycloudflare.com";
+// Backup target used when the primary tunnel fails (different provider, so the
+// two rarely die together).
+const BACKUP_TARGET = "https://inventashif-hackerai.loca.lt";
 
 // Inside the workspace the app is reachable directly on localhost, which never
 // expires. Only fall back to the public tunnel when localhost is unreachable
@@ -10,6 +14,10 @@ let localOk: boolean | undefined;
 let localCheckedAt = 0;
 
 async function localReachable(): Promise<boolean> {
+  // In the deployed Cloudflare Worker there is no localhost app, and fetching a
+  // raw IP there is answered by Cloudflare's edge with "error code: 1003"
+  // (a 403), which previously looked "reachable" and got proxied to the user.
+  if (process.env["NODE_ENV"] === "production") return false;
   const now = Date.now();
   if (localOk !== undefined && now - localCheckedAt < 30_000) return localOk;
   localCheckedAt = now;
@@ -18,7 +26,8 @@ async function localReachable(): Promise<boolean> {
       method: "HEAD",
       signal: AbortSignal.timeout(1500),
     });
-    localOk = res.status < 500;
+    // Only real app responses count; 4xx/5xx edge errors do not.
+    localOk = res.status < 400;
   } catch {
     localOk = false;
   }
@@ -69,15 +78,20 @@ export async function proxyRequest(request: Request): Promise<Response> {
     if (HOP_BY_HOP.has(k) || k.startsWith("cf-")) return;
     headers.set(key, value);
   });
-  headers.set("host", targetUrl.host);
+  // Never forward/override Host: the fetch URL decides it. Setting it manually
+  // makes Cloudflare-fronted tunnel hosts answer 1003.
+  headers.delete("host");
   headers.set("x-forwarded-host", incoming.host);
   headers.set("x-forwarded-proto", incoming.protocol.replace(":", ""));
+  // localtunnel shows an interstitial page to unknown browsers unless this
+  // header is present.
+  headers.set("bypass-tunnel-reminder", "1");
 
   const method = request.method.toUpperCase();
   const hasBody = method !== "GET" && method !== "HEAD";
 
-  const attempt = () =>
-    fetch(url, {
+  const attempt = (base: string) =>
+    fetch(`${new URL(base).origin}${incoming.pathname}${incoming.search}`, {
       method,
       headers,
       body: hasBody ? request.body : undefined,
@@ -86,16 +100,36 @@ export async function proxyRequest(request: Request): Promise<Response> {
       duplex: hasBody ? "half" : undefined,
     });
 
+  // A dead or rate-limited tunnel answers with an edge error, not app content.
+  const looksLikeEdgeError = (res: Response) =>
+    res.status === 429 ||
+    res.status === 502 ||
+    res.status === 503 ||
+    res.status === 530 ||
+    (res.status === 403 && !res.headers.get("content-type")?.includes("html"));
+
   try {
     let upstream: Response;
     try {
-      upstream = await attempt();
+      upstream = await attempt(url);
     } catch (error) {
       // One retry for transient upstream hiccups (restarts, tunnel reconnects).
       if (hasBody) throw error;
       await new Promise((resolve) => setTimeout(resolve, 400));
-      upstream = await attempt();
+      upstream = await attempt(url);
     }
+
+    // Bodyless requests can safely be replayed against the backup tunnel.
+    if (!hasBody && target !== LOCAL_TARGET && looksLikeEdgeError(upstream)) {
+      try {
+        const alt = await attempt(BACKUP_TARGET);
+        if (!looksLikeEdgeError(alt)) upstream = alt;
+      } catch {
+        /* keep the original response */
+      }
+    }
+
+
 
 
     const responseHeaders = new Headers();
