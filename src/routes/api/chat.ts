@@ -9,24 +9,26 @@ export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const authHeader = request.headers.get("authorization") ?? "";
-        const token = authHeader.replace(/^Bearer\s+/i, "");
+        const token = (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
         if (!token) return new Response("Unauthorized", { status: 401 });
 
         const supabase = createClient<Database>(
           process.env["SUPABASE_URL"]!,
           process.env["SUPABASE_PUBLISHABLE_KEY"]!,
-          { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${token}` } } },
+          {
+            auth: { persistSession: false, autoRefreshToken: false },
+            global: { headers: { Authorization: `Bearer ${token}` } },
+          },
         );
         const { data: userRes } = await supabase.auth.getUser();
         const user = userRes.user;
         if (!user) return new Response("Unauthorized", { status: 401 });
 
         const body = (await request.json()) as {
-          chatId: string;
-          messages: { role: "user" | "assistant" | "system"; content: string }[];
+          chatId?: string;
+          messages?: { role: "user" | "assistant"; content: string }[];
         };
-        if (!body.chatId || !Array.isArray(body.messages)) {
+        if (!body.chatId || !Array.isArray(body.messages) || body.messages.length === 0) {
           return new Response("Bad Request", { status: 400 });
         }
 
@@ -35,83 +37,48 @@ export const Route = createFileRoute("/api/chat")({
 
         const upstream = await fetch(AI_URL, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
+          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({
             model: MODEL,
-            stream: true,
             messages: [
               {
                 role: "system",
                 content:
-                  "You are HackerAI, an offensive-security research assistant. Answer clearly with practical, ethical guidance for authorized security testing. Refuse illegal targets.",
+                  "You are HackerAI, an offensive-security research assistant. Give clear, practical, ethical guidance for authorized security testing, with concrete commands and steps where useful. Refuse requests that target systems the user is not authorized to test.",
               },
-              ...body.messages,
+              ...body.messages.slice(-30),
             ],
           }),
         });
 
-        if (!upstream.ok || !upstream.body) {
-          const text = await upstream.text().catch(() => "");
+        if (!upstream.ok) {
           if (upstream.status === 429) return new Response("Rate limit reached", { status: 429 });
           if (upstream.status === 402) return new Response("AI credits exhausted", { status: 402 });
-          return new Response(text || "AI upstream failed", { status: 502 });
+          console.error("AI upstream failed", upstream.status, await upstream.text().catch(() => ""));
+          return new Response("AI upstream failed", { status: 502 });
         }
 
-        const reader = upstream.body.getReader();
-        const decoder = new TextDecoder();
-        const encoder = new TextEncoder();
-        let assistant = "";
-        let buffer = "";
+        const payload = (await upstream.json()) as {
+          choices?: { message?: { content?: string } }[];
+        };
+        const reply = payload.choices?.[0]?.message?.content?.trim() ?? "";
+        if (!reply) return new Response("Empty reply", { status: 502 });
 
-        const stream = new ReadableStream({
-          async pull(controller) {
-            const { done, value } = await reader.read();
-            if (done) {
-              if (assistant.trim()) {
-                await supabase.from("messages").insert({
-                  chat_id: body.chatId,
-                  user_id: user.id,
-                  role: "assistant",
-                  content: assistant,
-                });
-              }
-              controller.close();
-              return;
-            }
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split("\n");
-            buffer = lines.pop() ?? "";
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (!trimmed.startsWith("data:")) continue;
-              const payload = trimmed.slice(5).trim();
-              if (payload === "[DONE]") continue;
-              try {
-                const parsed = JSON.parse(payload);
-                const delta: string | undefined = parsed?.choices?.[0]?.delta?.content;
-                if (delta) {
-                  assistant += delta;
-                  controller.enqueue(encoder.encode(delta));
-                }
-              } catch {
-                /* ignore keepalives */
-              }
-            }
-          },
-          cancel() {
-            reader.cancel().catch(() => {});
-          },
-        });
+        const { data: saved } = await supabase
+          .from("messages")
+          .insert({
+            chat_id: body.chatId,
+            user_id: user.id,
+            role: "assistant",
+            content: reply,
+          })
+          .select("id, role, content")
+          .single();
 
-        return new Response(stream, {
-          headers: {
-            "Content-Type": "text/plain; charset=utf-8",
-            "Cache-Control": "no-cache",
-          },
-        });
+        return Response.json(
+          { message: saved ?? { id: `tmp-${Date.now()}`, role: "assistant", content: reply } },
+          { headers: { "Cache-Control": "no-store" } },
+        );
       },
     },
   },
