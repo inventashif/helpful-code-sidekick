@@ -168,32 +168,17 @@ function ConsolePage() {
         }),
       });
 
-      if (!res.ok || !res.body) {
+      if (!res.ok) {
         setError(
           res.status === 429
             ? "Too many requests right now — try again in a moment."
             : "The assistant could not answer. Please try again.",
         );
-        setBusy(false);
         return;
       }
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let acc = "";
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        acc += decoder.decode(value, { stream: true });
-        setStreaming(acc);
-      }
-      setStreaming("");
-      if (acc.trim()) {
-        setMessages((prev) => [
-          ...prev,
-          { id: `local-${Date.now()}`, role: "assistant", content: acc },
-        ]);
-      }
+      const data = (await res.json()) as { message?: MessageRow };
+      if (data.message) setMessages((prev) => [...prev, data.message as MessageRow]);
     } catch {
       setError("Connection interrupted. Please try again.");
     } finally {
