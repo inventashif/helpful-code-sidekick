@@ -60,6 +60,8 @@ const DEFAULT_ERROR = {
   description: "An unexpected error occurred during sign in. Please try again.",
 };
 
+export const dynamic = "force-dynamic";
+
 type SearchParams = Promise<{ code?: string }>;
 
 export default async function AuthErrorPage({
