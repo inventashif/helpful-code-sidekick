@@ -1,8 +1,9 @@
-// Public fallback used when localhost is unreachable (deployed Worker).
-// Cloudflare Quick Tunnels (*.trycloudflare.com) cannot be fetched from the
-// Worker — Cloudflare's edge answers 1003 — so this must be a non-Cloudflare
-// tunnel (localtunnel).
+// Public fallback used when localhost is unreachable (the deployed Worker).
+// Must never point at a raw IP: Cloudflare answers "error code: 1003" for those.
 const DEFAULT_TARGET = "https://optimum-rio-institutes-maps.trycloudflare.com";
+// Backup target used when the primary tunnel fails (different provider, so the
+// two rarely die together).
+const BACKUP_TARGET = "https://inventashif-hackerai.loca.lt";
 
 // Inside the workspace the app is reachable directly on localhost, which never
 // expires. Only fall back to the public tunnel when localhost is unreachable
