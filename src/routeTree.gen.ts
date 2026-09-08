@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ApiPublicConsoleSessionRouteImport } from './routes/api/public/console-session'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicConsoleSessionRoute = ApiPublicConsoleSessionRouteImport.update({
+  id: '/api/public/console-session',
+  path: '/api/public/console-session',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/auth': typeof AuthRoute
+  '/api/public/console-session': typeof ApiPublicConsoleSessionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/auth': typeof AuthRoute
+  '/api/public/console-session': typeof ApiPublicConsoleSessionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/auth': typeof AuthRoute
+  '/api/public/console-session': typeof ApiPublicConsoleSessionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/$' | '/auth'
+  fullPaths: '/' | '/$' | '/auth' | '/api/public/console-session'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$' | '/auth'
-  id: '__root__' | '/' | '/$' | '/auth'
+  to: '/' | '/$' | '/auth' | '/api/public/console-session'
+  id: '__root__' | '/' | '/$' | '/auth' | '/api/public/console-session'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
   AuthRoute: typeof AuthRoute
+  ApiPublicConsoleSessionRoute: typeof ApiPublicConsoleSessionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/console-session': {
+      id: '/api/public/console-session'
+      path: '/api/public/console-session'
+      fullPath: '/api/public/console-session'
+      preLoaderRoute: typeof ApiPublicConsoleSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
   AuthRoute: AuthRoute,
+  ApiPublicConsoleSessionRoute: ApiPublicConsoleSessionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
