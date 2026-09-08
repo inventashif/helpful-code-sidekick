@@ -13,6 +13,10 @@ let localOk: boolean | undefined;
 let localCheckedAt = 0;
 
 async function localReachable(): Promise<boolean> {
+  // In the deployed Cloudflare Worker there is no localhost app, and fetching a
+  // raw IP there is answered by Cloudflare's edge with "error code: 1003"
+  // (a 403), which previously looked "reachable" and got proxied to the user.
+  if (process.env["NODE_ENV"] === "production") return false;
   const now = Date.now();
   if (localOk !== undefined && now - localCheckedAt < 30_000) return localOk;
   localCheckedAt = now;
@@ -21,7 +25,8 @@ async function localReachable(): Promise<boolean> {
       method: "HEAD",
       signal: AbortSignal.timeout(1500),
     });
-    localOk = res.status < 500;
+    // Only real app responses count; 4xx/5xx edge errors do not.
+    localOk = res.status < 400;
   } catch {
     localOk = false;
   }
