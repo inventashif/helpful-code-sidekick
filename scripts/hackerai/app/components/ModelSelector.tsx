@@ -925,9 +925,7 @@ export function ModelSelector({ value, onChange, mode }: ModelSelectorProps) {
               zenModelsLoading={zenModelsLoading}
               ollamaModels={ollamaModels}
               ollamaModelsLoading={ollamaModelsLoading}
-              ollamaModels={ollamaModels}
-            ollamaModelsLoading={ollamaModelsLoading}
-            kiroModels={kiroModels}
+              kiroModels={kiroModels}
               kiroModelsLoading={kiroModelsLoading}
             />
           </SheetContent>
@@ -955,6 +953,8 @@ export function ModelSelector({ value, onChange, mode }: ModelSelectorProps) {
             onClose={() => setOpen(false)}
             zenModels={zenModels}
             zenModelsLoading={zenModelsLoading}
+            ollamaModels={ollamaModels}
+            ollamaModelsLoading={ollamaModelsLoading}
             kiroModels={kiroModels}
             kiroModelsLoading={kiroModelsLoading}
           />
