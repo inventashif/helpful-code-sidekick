@@ -22,3 +22,5 @@ export const metadata: Metadata = {
 export default function DownloadPage() {
   return <DownloadPageContent />;
 }
+
+export const dynamic = "force-dynamic";
