@@ -67,6 +67,7 @@ fi
 # Keep the persistent master copy of the source in sync with the repo copy.
 rsync -a --delete --exclude node_modules --exclude .next --exclude .git \
   --exclude bin --exclude .env.local --exclude .personal --exclude .convex \
+  --exclude node-modules-cache.tar --exclude node-modules-cache.lock-hash \
   "$SRC/" "$PERSISTENT/" 2>/dev/null || true
 
 
