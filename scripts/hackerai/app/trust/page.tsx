@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import type { Metadata } from "next";
 import {
   Activity,
@@ -34,7 +36,6 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-static";
 
 const LAST_UPDATED = "June 24, 2026";
 

@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { Chat } from "../../../components/chat";
 import { useConvexAuth } from "convex/react";
 import Loading from "@/components/ui/loading";

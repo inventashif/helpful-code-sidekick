@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -18,7 +20,6 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-static";
 
 export default function PrivacyPolicyPage() {
   return (

@@ -1,6 +1,6 @@
 // Public fallback used when localhost is unreachable (the deployed Worker).
 // Must never point at a raw IP: Cloudflare answers "error code: 1003" for those.
-const DEFAULT_TARGET = "https://optimum-rio-institutes-maps.trycloudflare.com";
+const DEFAULT_TARGET = "https://plc-herbs-fix-lol.trycloudflare.com";
 // Backup target used when the primary tunnel fails (different provider, so the
 // two rarely die together).
 const BACKUP_TARGET = "https://inventashif-hackerai.loca.lt";
